@@ -4,6 +4,7 @@
 
 static GLuint shader_program;
 static GLuint vbo;
+static GLuint instance_vbo;
 static GLuint vao;
 
 static char *
@@ -104,23 +105,57 @@ load()
         shader_program = load_shader_program("vertex-shader.glsl",
                                              "fragment-shader.glsl");
 
-        float vertices[] = {
-                0.0f, 0.5f, 0.0f,
-                0.0f, -0.5f, 0.0f,
-                0.5f, -0.5f, 0.0f,
+        // Vertex data are actually only the vertex indices. 0, 1, 2,
+        // and 3 being the bottom-left, top-left, top-right and
+        // bottom-right corners of the quad.
+        int vertex_data[] = {
+                0, 1, 3, // triangle 1
+                1, 2, 3, // triangle 2
+        };
+
+        float instance_data[] = {
+                // pos        size          color
+                0.0f, 0.0f,   0.5f, 0.5f,   1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.25f, 0.25f, 1.0f, 0.0f, 1.0f, 1.0f,
         };
 
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);
+        glGenBuffers(1, &instance_vbo);
 
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
 
-        GLint position_attr = glGetAttribLocation(shader_program, "position");
-        glVertexAttribPointer(position_attr, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
-        glEnableVertexAttribArray(position_attr);
+        GLint index_attr = 0;// glGetAttribLocation(shader_program, "index");
+        glVertexAttribIPointer(index_attr, 1, GL_INT, 1 * sizeof(int), (void *) 0);
+        glEnableVertexAttribArray(index_attr);
+
+        /* glVertexAttribPointer already registered with the VAO, so
+         * we can safely unbind */
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(instance_data), instance_data, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
+
+        GLint obj_position_attr = glGetAttribLocation(shader_program, "obj_position");
+        glEnableVertexAttribArray(obj_position_attr);
+        glVertexAttribPointer(obj_position_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) 0);
+        glVertexAttribDivisor(obj_position_attr, 1);
+
+        GLint obj_size_attr = glGetAttribLocation(shader_program, "obj_size");
+        glEnableVertexAttribArray(obj_size_attr);
+        glVertexAttribPointer(obj_size_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (2 * sizeof(GLfloat)));
+        glVertexAttribDivisor(obj_size_attr, 1);
+
+        GLint obj_color_attr = glGetAttribLocation(shader_program, "obj_color");
+        glEnableVertexAttribArray(obj_color_attr);
+        glVertexAttribPointer(obj_color_attr, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (4 * sizeof(GLfloat)));
+        glVertexAttribDivisor(obj_color_attr, 1);
 
         /* glVertexAttribPointer already registered with the VAO, so
          * we can safely unbind */
@@ -138,7 +173,7 @@ render()
 
         glUseProgram(shader_program);
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 2);
 
         glBindVertexArray(0);
         glUseProgram(0);
