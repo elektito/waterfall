@@ -36,7 +36,7 @@ void main()
         }
 
         // camera transform
-        pos = (pos - camera_pos) / camera_size * 2.0 - 1.0;
+        pos = 2 * (pos - camera_pos) / camera_size;
 
         coords = vec4(pos, -pos.y, 1.0);
         gl_Position = coords;
