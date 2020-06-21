@@ -7,10 +7,13 @@ static GLuint vbo;
 static GLuint instance_vbo;
 static GLuint vao;
 
-static float cam_x = 0;
-static float cam_y = 0;
-static float cam_w = 2;
-static float cam_h = 2;
+static float cam_x = 0.0;
+static float cam_y = 0.0;
+static float cam_w = 1.0;
+static float cam_h = 1.0;
+static float zoom = 1.0;
+
+const int UNIT_SIZE = 16;
 
 static char *
 read_file(const char *filename, long *length)
@@ -114,7 +117,7 @@ update_camera()
 
         glUseProgram(shader_program);
         glUniform2f(camera_pos, cam_x, cam_y);
-        glUniform2f(camera_size, cam_w, cam_h);
+        glUniform2f(camera_size, cam_w * zoom, cam_h * zoom);
         glUseProgram(0);
 }
 
@@ -133,9 +136,9 @@ load()
         };
 
         float instance_data[] = {
-                // pos        size          color
-                0.0f, 0.0f,   0.5f, 0.5f,   1.0f, 0.0f, 0.0f, 1.0f,
-                -1.0f, -1.0f, 0.25f, 0.25f, 1.0f, 0.0f, 1.0f, 1.0f,
+                // pos         size         color
+                0.0f, 0.0f,    5.0f, 5.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -5.0f, -5.0f,  2.0f, 2.0f,  1.0f, 0.0f, 1.0f, 1.0f,
         };
 
         glGenVertexArrays(1, &vao);
@@ -218,36 +221,36 @@ handle_events(SDL_Event *e, SDL_Window *window, int *quit)
                         break;
 
                 case SDLK_LEFT:
-                        cam_x += 0.02;
+                        cam_x += cam_w / 100.0;
                         update_camera();
                         break;
 
                 case SDLK_RIGHT:
-                        cam_x -= 0.02;
+                        cam_x -= cam_w / 100.0;
                         update_camera();
                         break;
 
                 case SDLK_UP:
-                        cam_y -= 0.02;
+                        cam_y -= cam_h / 100.0;
                         update_camera();
                         break;
 
                 case SDLK_DOWN:
-                        cam_y += 0.02;
+                        cam_y += cam_h / 100;
                         update_camera();
                         break;
 
                 case SDLK_MINUS:
                 case SDLK_UNDERSCORE:
-                        cam_w *= 1.1;
-                        cam_h *= 1.1;
+                        zoom += 0.1;
                         update_camera();
                         break;
 
                 case SDLK_PLUS:
                 case SDLK_EQUALS:
-                        cam_w /= 1.1;
-                        cam_h /= 1.1;
+                        zoom -= 0.1;
+                        if (zoom <= 0.1)
+                                zoom = 0.1;
                         update_camera();
                         break;
                 }
@@ -259,6 +262,10 @@ handle_events(SDL_Event *e, SDL_Window *window, int *quit)
 
                         // Update OpenGL viewport.
                         glViewport(0, 0, winw, winh);
+
+                        cam_w = winw / UNIT_SIZE;
+                        cam_h = winh / UNIT_SIZE;
+                        update_camera();
 
                         printf("Window resized: %dx%d\n", winw, winh);
                 }
