@@ -12,6 +12,10 @@ in vec4 obj_color;
 out vec4 coords;
 out vec4 color;
 
+// uniforms
+uniform vec2 camera_pos;
+uniform vec2 camera_size;
+
 void main()
 {
         vec2 pos;
@@ -30,6 +34,9 @@ void main()
                 pos = obj_position + vec2(obj_size.x, 0);
                 break;
         }
+
+        // camera transform
+        pos = (pos - camera_pos) / camera_size * 2.0 - 1.0;
 
         coords = vec4(pos, -pos.y, 1.0);
         gl_Position = coords;

@@ -7,6 +7,11 @@ static GLuint vbo;
 static GLuint instance_vbo;
 static GLuint vao;
 
+static float cam_x = 0;
+static float cam_y = 0;
+static float cam_w = 2;
+static float cam_h = 2;
+
 static char *
 read_file(const char *filename, long *length)
 {
@@ -100,6 +105,20 @@ load_shader_program(const char *vertex_shader_filename,
 }
 
 static void
+update_camera()
+{
+        GLint camera_pos, camera_size;
+
+        camera_pos = glGetUniformLocation(shader_program, "camera_pos");
+        camera_size = glGetUniformLocation(shader_program, "camera_size");
+
+        glUseProgram(shader_program);
+        glUniform2f(camera_pos, cam_x, cam_y);
+        glUniform2f(camera_size, cam_w, cam_h);
+        glUseProgram(0);
+}
+
+static void
 load()
 {
         shader_program = load_shader_program("vertex-shader.glsl",
@@ -163,6 +182,8 @@ load()
 
         /* Unbind VAO */
         glBindVertexArray(0);
+
+        update_camera();
 }
 
 static void
@@ -194,6 +215,40 @@ handle_events(SDL_Event *e, SDL_Window *window, int *quit)
                 case SDLK_q:
                         quitEvent.type = SDL_QUIT;
                         SDL_PushEvent(&quitEvent);
+                        break;
+
+                case SDLK_LEFT:
+                        cam_x += 0.02;
+                        update_camera();
+                        break;
+
+                case SDLK_RIGHT:
+                        cam_x -= 0.02;
+                        update_camera();
+                        break;
+
+                case SDLK_UP:
+                        cam_y -= 0.02;
+                        update_camera();
+                        break;
+
+                case SDLK_DOWN:
+                        cam_y += 0.02;
+                        update_camera();
+                        break;
+
+                case SDLK_MINUS:
+                case SDLK_UNDERSCORE:
+                        cam_w *= 1.1;
+                        cam_h *= 1.1;
+                        update_camera();
+                        break;
+
+                case SDLK_PLUS:
+                case SDLK_EQUALS:
+                        cam_w /= 1.1;
+                        cam_h /= 1.1;
+                        update_camera();
                         break;
                 }
 
