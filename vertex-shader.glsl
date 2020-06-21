@@ -14,28 +14,24 @@ out vec4 color;
 
 void main()
 {
-        float x, y;
+        vec2 pos;
 
         switch (index) {
         case 0: // bottom-left
-                x = obj_position.x;
-                y = obj_position.y;
+                pos = obj_position;
                 break;
         case 1: // top-left
-                x = obj_position.x;
-                y = obj_position.y + obj_size.y;
+                pos = obj_position + vec2(0, obj_size.y);
                 break;
         case 2: // top-right
-                x = obj_position.x + obj_size.x;
-                y = obj_position.y + obj_size.y;
+                pos = obj_position + obj_size;
                 break;
         case 3: // bottom-right
-                x = obj_position.x + obj_size.x;
-                y = obj_position.y;
+                pos = obj_position + vec2(obj_size.x, 0);
                 break;
         }
 
-        coords = vec4(x, y, -y, 1.0);
+        coords = vec4(pos, -pos.y, 1.0);
         gl_Position = coords;
         color = obj_color;
 }
