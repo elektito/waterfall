@@ -6,7 +6,7 @@
 #include <stb_image.h>
 
 static GLuint texture;
-static GLuint shader_program;
+static GLuint object_program;
 static GLuint vbo;
 static GLuint instance_vbo;
 static GLuint vao;
@@ -118,14 +118,14 @@ load_shader_program(const char *vertex_shader_filename,
 }
 
 static void
-update_camera()
+update_camera(void)
 {
         GLint camera_pos, camera_size;
 
-        camera_pos = glGetUniformLocation(shader_program, "camera_pos");
-        camera_size = glGetUniformLocation(shader_program, "camera_size");
+        camera_pos = glGetUniformLocation(object_program, "camera_pos");
+        camera_size = glGetUniformLocation(object_program, "camera_size");
 
-        glUseProgram(shader_program);
+        glUseProgram(object_program);
         glUniform2f(camera_pos, cam_x, cam_y);
         glUniform2f(camera_size, cam_w * zoom, cam_h * zoom);
         glUseProgram(0);
@@ -179,11 +179,9 @@ load_texture(const char *filename)
 }
 
 static void
-load()
+init_objects(void)
 {
-        texture = load_texture("sheet.png");
-
-        shader_program = load_shader_program("vertex-shader.glsl",
+        object_program = load_shader_program("vertex-shader.glsl",
                                              "fragment-shader.glsl");
 
         // Vertex data are actually only the vertex indices. 0, 1, 2,
@@ -210,7 +208,7 @@ load()
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
 
-        GLint index_attr = 0;// glGetAttribLocation(shader_program, "index");
+        GLint index_attr = glGetAttribLocation(object_program, "index");
         glVertexAttribIPointer(index_attr, 1, GL_INT, 1 * sizeof(int), (void *) 0);
         glEnableVertexAttribArray(index_attr);
 
@@ -224,17 +222,17 @@ load()
 
         glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
 
-        GLint obj_position_attr = glGetAttribLocation(shader_program, "obj_position");
+        GLint obj_position_attr = glGetAttribLocation(object_program, "obj_position");
         glEnableVertexAttribArray(obj_position_attr);
         glVertexAttribPointer(obj_position_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) 0);
         glVertexAttribDivisor(obj_position_attr, 1);
 
-        GLint obj_size_attr = glGetAttribLocation(shader_program, "obj_size");
+        GLint obj_size_attr = glGetAttribLocation(object_program, "obj_size");
         glEnableVertexAttribArray(obj_size_attr);
         glVertexAttribPointer(obj_size_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (2 * sizeof(GLfloat)));
         glVertexAttribDivisor(obj_size_attr, 1);
 
-        GLint obj_tex_coords_attr = glGetAttribLocation(shader_program, "obj_texture_coords");
+        GLint obj_tex_coords_attr = glGetAttribLocation(object_program, "obj_texture_coords");
         glEnableVertexAttribArray(obj_tex_coords_attr);
         glVertexAttribPointer(obj_tex_coords_attr, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (4 * sizeof(GLfloat)));
         glVertexAttribDivisor(obj_tex_coords_attr, 1);
@@ -245,6 +243,14 @@ load()
 
         /* Unbind VAO */
         glBindVertexArray(0);
+}
+
+static void
+load(void)
+{
+        texture = load_texture("sheet.png");
+
+        init_objects();
 
         update_camera();
 
@@ -254,13 +260,13 @@ load()
 }
 
 static void
-render()
+render(void)
 {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glBindTexture(GL_TEXTURE_2D, texture);
-        glUseProgram(shader_program);
+        glUseProgram(object_program);
         glBindVertexArray(vao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 3);
         glBindTexture(GL_TEXTURE_2D, 0);
