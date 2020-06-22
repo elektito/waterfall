@@ -2,6 +2,10 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+static GLuint texture;
 static GLuint shader_program;
 static GLuint vbo;
 static GLuint instance_vbo;
@@ -127,9 +131,58 @@ update_camera()
         glUseProgram(0);
 }
 
+static GLuint
+load_texture(const char *filename)
+{
+        GLuint tex;
+        int w, h, channels;
+        uint8_t *img;
+        GLenum err;
+
+        /* Since the direction of the y-axis in the image files is the
+           reverse of its direction in OpenGL textures, instruct
+           stb_image to flip the y-axis when loading textures. */
+        stbi_set_flip_vertically_on_load(1);
+
+        img = stbi_load(filename, &w, &h, &channels, 0);
+        if (img == NULL) {
+                printf("Unable to load image. stb_image error: %s\n",
+                       stbi_failure_reason());
+                exit(1);
+        }
+
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, img);
+        stbi_image_free(img);
+        err = glGetError();
+        if (err != GL_NO_ERROR) {
+                printf("OpenGL error %d while loading image file: %s.\n",
+                       (int) err, filename);
+                exit(1);
+        }
+        printf("Loaded texture: filename=%s size=%dx%d channels=%d\n",
+               filename, w, h, channels);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        /* Generate mipmaps. */
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return tex;
+}
+
 static void
 load()
 {
+        texture = load_texture("sheet.png");
+
         shader_program = load_shader_program("vertex-shader.glsl",
                                              "fragment-shader.glsl");
 
@@ -142,9 +195,10 @@ load()
         };
 
         float instance_data[] = {
-                // pos         size         color
-                0.0f, 0.0f,    5.0f, 5.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-                -5.0f, -5.0f,  2.0f, 2.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                // pos         size         texture coords
+                0.0f, 0.0f,    5.0f, 5.0f,  0.0f, 0.5f, 0.5f, 1.0f,
+                -5.0f, -5.0f,  2.0f, 2.0f,  0.5f, 0.0f, 1.0f, 0.5f,
+                10.0f, 5.0f,   2.0f, 2.0f,  0.5f, 0.5f, 1.0f, 1.0f,
         };
 
         glGenVertexArrays(1, &vao);
@@ -180,10 +234,10 @@ load()
         glVertexAttribPointer(obj_size_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (2 * sizeof(GLfloat)));
         glVertexAttribDivisor(obj_size_attr, 1);
 
-        GLint obj_color_attr = glGetAttribLocation(shader_program, "obj_color");
-        glEnableVertexAttribArray(obj_color_attr);
-        glVertexAttribPointer(obj_color_attr, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (4 * sizeof(GLfloat)));
-        glVertexAttribDivisor(obj_color_attr, 1);
+        GLint obj_tex_coords_attr = glGetAttribLocation(shader_program, "obj_texture_coords");
+        glEnableVertexAttribArray(obj_tex_coords_attr);
+        glVertexAttribPointer(obj_tex_coords_attr, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (4 * sizeof(GLfloat)));
+        glVertexAttribDivisor(obj_tex_coords_attr, 1);
 
         /* glVertexAttribPointer already registered with the VAO, so
          * we can safely unbind */
@@ -193,6 +247,10 @@ load()
         glBindVertexArray(0);
 
         update_camera();
+
+        /* Enable blending */
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 static void
@@ -201,9 +259,11 @@ render()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glBindTexture(GL_TEXTURE_2D, texture);
         glUseProgram(shader_program);
         glBindVertexArray(vao);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 2);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 3);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         glBindVertexArray(0);
         glUseProgram(0);

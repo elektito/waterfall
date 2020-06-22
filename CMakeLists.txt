@@ -12,5 +12,5 @@ add_executable(wf
   libs/glad/src/glad.c
 )
 
-target_include_directories(wf PRIVATE libs/glad/include)
-target_link_libraries(wf PRIVATE SDL2 dl)
+target_include_directories(wf PRIVATE libs/glad/include libs/)
+target_link_libraries(wf PRIVATE SDL2 dl m)
