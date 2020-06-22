@@ -5,6 +5,8 @@ project(waterfall VERSION 0.1 LANGUAGES C)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
+
 add_executable(wf
   wf.c
   libs/glad/src/glad.c

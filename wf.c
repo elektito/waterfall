@@ -18,6 +18,7 @@ const int UNIT_SIZE = 16;
 static char *
 read_file(const char *filename, long *length)
 {
+        int bytes_read;
         char *buffer = 0;
         FILE *f = fopen(filename, "rb");
 
@@ -27,7 +28,12 @@ read_file(const char *filename, long *length)
                 fseek(f, 0, SEEK_SET);
                 buffer = malloc(*length);
                 if (buffer) {
-                        fread(buffer, 1, *length, f);
+                        bytes_read = fread(buffer, 1, *length, f);
+                        if (bytes_read != *length) {
+                                printf("Could not read file: %s\n",
+                                       filename);
+                                exit(1);
+                        }
                 }
                 fclose(f);
         }
@@ -73,7 +79,7 @@ load_shader_program(const char *vertex_shader_filename,
         GLuint vertex_shader;
         GLuint fragment_shader;
         GLuint program;
-        GLuint status;
+        GLint status;
 
         vertex_shader_source = read_file(vertex_shader_filename,
                                          &vertex_shader_source_length);
