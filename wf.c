@@ -198,16 +198,16 @@ init_objects(void)
         object_program = load_shader_program("obj-vertex-shader.glsl",
                                              "fragment-shader.glsl");
 
-        // Vertex data are actually only the vertex indices. 0, 1, 2,
-        // and 3 being the bottom-left, top-left, top-right and
-        // bottom-right corners of the quad.
+        /* Vertex data are actually only the vertex indices. 0, 1, 2,
+           and 3 being the bottom-left, top-left, top-right and
+           bottom-right corners of the quad. */
         int vertex_data[] = {
-                0, 1, 3, // triangle 1
-                1, 2, 3, // triangle 2
+                0, 1, 3, /* triangle 1 */
+                1, 2, 3, /* triangle 2 */
         };
 
         float instance_data[] = {
-                // pos         size           texture coords
+                /* pos         size           texture coords */
                 0.0f, 0.0f,    5.0f, 5.0f,    0.0f, 0.5f, 0.5f, 1.0f,
                 20.0f, 15.0f,  10.0f, 10.0f,  0.5f, 0.5f, 1.0f, 1.0f,
                 17.0f, 12.0f,  10.0f, 10.0f,  0.5f, 0.0f, 1.0f, 0.5f,
@@ -278,12 +278,12 @@ init_map(void)
         map_program = load_shader_program("map-vertex-shader.glsl",
                                           "fragment-shader.glsl");
 
-        // Vertex data are actually only the vertex indices. 0, 1, 2,
-        // and 3 being the bottom-left, top-left, top-right and
-        // bottom-right corners of the quad.
+        /* Vertex data are actually only the vertex indices. 0, 1, 2,
+           and 3 being the bottom-left, top-left, top-right and
+           bottom-right corners of the quad. */
         int vertex_data[] = {
-                0, 1, 3, // triangle 1
-                1, 2, 3, // triangle 2
+                0, 1, 3, /* triangle 1 */
+                1, 2, 3, /* triangle 2 */
         };
 
         int map_size = MAP_WIDTH * MAP_HEIGHT;
@@ -462,7 +462,7 @@ handle_events(SDL_Event *e, SDL_Window *window, int *quit)
                         int winw, winh;
                         SDL_GetWindowSize(window, &winw, &winh);
 
-                        // Update OpenGL viewport.
+                        /* Update OpenGL viewport. */
                         glViewport(0, 0, winw, winh);
 
                         cam_w = winw / UNIT_SIZE;
