@@ -7,9 +7,13 @@
 
 static GLuint texture;
 static GLuint object_program;
-static GLuint vbo;
-static GLuint instance_vbo;
-static GLuint vao;
+static GLuint map_program;
+static GLuint object_vbo;
+static GLuint object_instance_vbo;
+static GLuint object_vao;
+static GLuint map_vbo;
+static GLuint map_instance_vbo;
+static GLuint map_vao;
 
 static float cam_x = 0.0;
 static float cam_y = 0.0;
@@ -18,6 +22,8 @@ static float cam_h = 1.0;
 static float zoom = 1.0;
 
 const int UNIT_SIZE = 16;
+const int MAP_WIDTH = 200;
+const int MAP_HEIGHT = 100;
 
 static char *
 read_file(const char *filename, long *length)
@@ -129,6 +135,14 @@ update_camera(void)
         glUniform2f(camera_pos, cam_x, cam_y);
         glUniform2f(camera_size, cam_w * zoom, cam_h * zoom);
         glUseProgram(0);
+
+        camera_pos = glGetUniformLocation(map_program, "camera_pos");
+        camera_size = glGetUniformLocation(map_program, "camera_size");
+
+        glUseProgram(map_program);
+        glUniform2f(camera_pos, cam_x, cam_y);
+        glUniform2f(camera_size, cam_w * zoom, cam_h * zoom);
+        glUseProgram(0);
 }
 
 static GLuint
@@ -181,7 +195,7 @@ load_texture(const char *filename)
 static void
 init_objects(void)
 {
-        object_program = load_shader_program("vertex-shader.glsl",
+        object_program = load_shader_program("obj-vertex-shader.glsl",
                                              "fragment-shader.glsl");
 
         // Vertex data are actually only the vertex indices. 0, 1, 2,
@@ -199,30 +213,36 @@ init_objects(void)
                 10.0f, 5.0f,   2.0f, 2.0f,  0.5f, 0.5f, 1.0f, 1.0f,
         };
 
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &instance_vbo);
+        glGenVertexArrays(1, &object_vao);
+        glGenBuffers(1, &object_vbo);
+        glGenBuffers(1, &object_instance_vbo);
 
-        glBindVertexArray(vao);
+        glBindVertexArray(object_vao);
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, object_vbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     sizeof(vertex_data),
+                     vertex_data,
+                     GL_STATIC_DRAW);
 
         GLint index_attr = glGetAttribLocation(object_program, "index");
-        glVertexAttribIPointer(index_attr, 1, GL_INT, 1 * sizeof(int), (void *) 0);
+        glVertexAttribIPointer(index_attr, 1, GL_INT, 1 * sizeof(int),
+                               (void *) 0);
         glEnableVertexAttribArray(index_attr);
 
-        /* glVertexAttribPointer already registered with the VAO, so
-         * we can safely unbind */
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(instance_data), instance_data, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, object_instance_vbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     sizeof(instance_data),
+                     instance_data,
+                     GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, object_instance_vbo);
 
-        GLint obj_position_attr = glGetAttribLocation(object_program, "obj_position");
+        GLint obj_position_attr = glGetAttribLocation(object_program,
+                                                      "obj_position");
         glEnableVertexAttribArray(obj_position_attr);
         glVertexAttribPointer(obj_position_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) 0);
         glVertexAttribDivisor(obj_position_attr, 1);
@@ -243,6 +263,103 @@ init_objects(void)
 
         /* Unbind VAO */
         glBindVertexArray(0);
+
+        int max_y_uniform = glGetUniformLocation(object_program,
+                                                 "max_y");
+
+        glUseProgram(object_program);
+        glUniform1f(max_y_uniform, MAP_HEIGHT);
+        glUseProgram(0);
+}
+
+static void
+init_map(void)
+{
+        map_program = load_shader_program("map-vertex-shader.glsl",
+                                          "fragment-shader.glsl");
+
+        // Vertex data are actually only the vertex indices. 0, 1, 2,
+        // and 3 being the bottom-left, top-left, top-right and
+        // bottom-right corners of the quad.
+        int vertex_data[] = {
+                0, 1, 3, // triangle 1
+                1, 2, 3, // triangle 2
+        };
+
+        int map_size = MAP_WIDTH * MAP_HEIGHT;
+        float *instance_data = malloc(map_size * 4 * sizeof(GLfloat));
+        float *base;
+        for (int y = 0; y < MAP_HEIGHT; ++y) {
+                for (int x = 0; x < MAP_WIDTH; ++x) {
+                        /* Each instance attribute is a vec4
+                           consisting of two texture coordinates. */
+
+                        /* bottom-left texture coordinates */
+                        base = instance_data + 4*((MAP_WIDTH * y) + x);
+                        base[0] = 0.0f;
+                        base[1] = 0.0;
+
+                        /* top-right texture-coordinates */
+                        base[2] = 0.5f;
+                        base[3] = 0.5f;
+                }
+        }
+
+        glGenVertexArrays(1, &map_vao);
+        glGenBuffers(1, &map_vbo);
+        glGenBuffers(1, &map_instance_vbo);
+
+        glBindVertexArray(map_vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, map_vbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     sizeof(vertex_data),
+                     vertex_data,
+                     GL_STATIC_DRAW);
+
+        GLint index_attr = glGetAttribLocation(map_program, "index");
+        glVertexAttribIPointer(index_attr, 1, GL_INT, 1 * sizeof(int),
+                               (void *) 0);
+        glEnableVertexAttribArray(index_attr);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, map_instance_vbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     map_size * 4 * sizeof(GLfloat),
+                     instance_data,
+                     GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, map_instance_vbo);
+
+        GLint tex_coords_attr = glGetAttribLocation(map_program,
+                                                    "tile_texture_coords");
+        glEnableVertexAttribArray(tex_coords_attr);
+        glVertexAttribPointer(tex_coords_attr, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
+
+        /* Mark it as an instance attribute updated for each
+           instance */
+        glVertexAttribDivisor(tex_coords_attr, 1);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindVertexArray(0);
+
+        free(instance_data);
+
+        int map_width_uniform = glGetUniformLocation(map_program,
+                                                     "map_width");
+        int camera_pos_uniform = glGetUniformLocation(map_program,
+                                                      "camera_pos");
+        int camera_size_uniform = glGetUniformLocation(map_program,
+                                                       "camera_size");
+
+        glUseProgram(map_program);
+        glUniform1i(map_width_uniform, MAP_WIDTH);
+        glUniform2f(camera_pos_uniform, cam_x, cam_y);
+        glUniform2f(camera_size_uniform, cam_w * zoom, cam_h * zoom);
+        glUseProgram(0);
 }
 
 static void
@@ -250,6 +367,7 @@ load(void)
 {
         texture = load_texture("sheet.png");
 
+        init_map();
         init_objects();
 
         update_camera();
@@ -265,9 +383,21 @@ render(void)
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        /* render map */
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUseProgram(map_program);
+        glBindVertexArray(map_vao);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 6,
+                              MAP_WIDTH * MAP_HEIGHT);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glBindVertexArray(0);
+        glUseProgram(0);
+
+        /* render objects */
         glBindTexture(GL_TEXTURE_2D, texture);
         glUseProgram(object_program);
-        glBindVertexArray(vao);
+        glBindVertexArray(object_vao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 3);
         glBindTexture(GL_TEXTURE_2D, 0);
 
