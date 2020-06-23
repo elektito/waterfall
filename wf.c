@@ -207,10 +207,10 @@ init_objects(void)
         };
 
         float instance_data[] = {
-                // pos         size         texture coords
-                0.0f, 0.0f,    5.0f, 5.0f,  0.0f, 0.5f, 0.5f, 1.0f,
-                -5.0f, -5.0f,  2.0f, 2.0f,  0.5f, 0.0f, 1.0f, 0.5f,
-                10.0f, 5.0f,   2.0f, 2.0f,  0.5f, 0.5f, 1.0f, 1.0f,
+                // pos         size           texture coords
+                0.0f, 0.0f,    5.0f, 5.0f,    0.0f, 0.5f, 0.5f, 1.0f,
+                20.0f, 15.0f,  10.0f, 10.0f,  0.5f, 0.5f, 1.0f, 1.0f,
+                17.0f, 12.0f,  10.0f, 10.0f,  0.5f, 0.0f, 1.0f, 0.5f,
         };
 
         glGenVertexArrays(1, &object_vao);

@@ -42,6 +42,11 @@ void main()
         // camera transform
         pos = 2 * (pos - camera_pos) / camera_size;
 
-        coords = vec4(pos, -pos.y, 1.0);
+        // positions are now from zero upwards. translate to (-1, -1)
+        // so that the origin is at the bottom-left corner of the
+        // viewport, not at the center.
+        pos -= vec2(1, 1);
+
+        coords = vec4(pos, 0.0, 1.0);
         gl_Position = coords;
 }
