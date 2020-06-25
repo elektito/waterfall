@@ -384,22 +384,18 @@ render(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         /* render map */
-        glBindTexture(GL_TEXTURE_2D, texture);
         glUseProgram(map_program);
         glBindVertexArray(map_vao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6,
                               MAP_WIDTH * MAP_HEIGHT);
-        glBindTexture(GL_TEXTURE_2D, 0);
 
         glBindVertexArray(0);
         glUseProgram(0);
 
         /* render objects */
-        glBindTexture(GL_TEXTURE_2D, texture);
         glUseProgram(object_program);
         glBindVertexArray(object_vao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 3);
-        glBindTexture(GL_TEXTURE_2D, 0);
 
         glBindVertexArray(0);
         glUseProgram(0);
@@ -513,6 +509,8 @@ main(int argc, char *argv[])
         load();
 
         SDL_ShowWindow(window);
+
+        glBindTexture(GL_TEXTURE_2D, texture);
 
         SDL_Event e;
         int quit = 0;
