@@ -190,6 +190,31 @@ update_camera(void)
         glUseProgram(0);
 }
 
+static void
+center_camera(float x, float y)
+{
+        cam_x = x - cam_w / 2;
+        cam_y = y - cam_h / 2;
+
+        if (cam_x < 0) {
+                cam_x = 0;
+        }
+
+        if (cam_y < 0) {
+                cam_y = 0;
+        }
+
+        if (cam_x + cam_w >= MAP_WIDTH) {
+                cam_x = MAP_WIDTH - cam_w;
+        }
+
+        if (cam_y + cam_h >= MAP_HEIGHT) {
+                cam_y = MAP_HEIGHT - cam_h;
+        }
+
+        update_camera();
+}
+
 static GLuint
 load_texture(const char *filename)
 {
@@ -502,23 +527,27 @@ handle_events(SDL_Event *e, SDL_Window *window, int *quit)
                         break;
 
                 case SDLK_LEFT:
-                        cam_x += cam_w / 100.0;
-                        update_camera();
+                        objects[1].x -= cam_w / 100.0;
+                        update_object_data();
+                        center_camera(objects[1].x, objects[1].y);
                         break;
 
                 case SDLK_RIGHT:
-                        cam_x -= cam_w / 100.0;
-                        update_camera();
+                        objects[1].x += cam_w / 100.0;
+                        update_object_data();
+                        center_camera(objects[1].x, objects[1].y);
                         break;
 
                 case SDLK_UP:
-                        cam_y -= cam_h / 100.0;
-                        update_camera();
+                        objects[1].y += cam_h / 100.0;
+                        update_object_data();
+                        center_camera(objects[1].x, objects[1].y);
                         break;
 
                 case SDLK_DOWN:
-                        cam_y += cam_h / 100;
-                        update_camera();
+                        objects[1].y -= cam_h / 100.0;
+                        update_object_data();
+                        center_camera(objects[1].x, objects[1].y);
                         break;
 
                 case SDLK_MINUS:
