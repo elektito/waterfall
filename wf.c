@@ -25,6 +25,51 @@ const int UNIT_SIZE = 16;
 const int MAP_WIDTH = 200;
 const int MAP_HEIGHT = 100;
 
+static int obj_count = 3;
+struct object {
+        float x;
+        float y;
+        float width;
+        float height;
+        float texture_s;
+        float texture_t;
+        float texture_width;
+        float texture_height;
+};
+
+static struct object objects[] = {
+        {
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = 5.0f,
+                .height = 5.0f,
+                .texture_s = 0.0f,
+                .texture_t = 0.5f,
+                .texture_width = 0.5f,
+                .texture_height = 0.5f,
+        },
+        {
+                .x = 20.0f,
+                .y = 15.0f,
+                .width = 10.0f,
+                .height = 10.0f,
+                .texture_s = 0.5f,
+                .texture_t = 0.5f,
+                .texture_width = 0.5f,
+                .texture_height = 0.5f,
+        },
+        {
+                .x = 17.0f,
+                .y = 12.0f,
+                .width = 10.0f,
+                .height = 10.0f,
+                .texture_s = 0.5f,
+                .texture_t = 0.0f,
+                .texture_width = 0.5f,
+                .texture_height = 0.5,
+        }
+};
+
 static char *
 read_file(const char *filename, long *length)
 {
@@ -201,6 +246,43 @@ load_texture(const char *filename)
 }
 
 static void
+update_object_data(void)
+{
+        glBindBuffer(GL_ARRAY_BUFFER, object_instance_vbo);
+
+        /* Re-allocate buffer data. In case data size has changed this
+           is necessary so we allocate enough data. If data size has
+           not changed, this is still useful since it effectively
+           invalidate the previous buffer (like glInvalidateBufferData
+           would do), and the call to glMapBuffer would not block even
+           if the buffer is currently in use by GPU.
+
+           At least, that's my understanding so far. Don't quote me on
+           this!
+        */
+        glBufferData(GL_ARRAY_BUFFER,
+                     obj_count * 8 * sizeof(GLfloat),
+                     NULL,
+                     GL_DYNAMIC_DRAW);
+
+        float *data = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+        for (int i = 0; i < obj_count; ++i) {
+                float *base = data + 8 * i;
+                base[0] = objects[i].x;
+                base[1] = objects[i].y;
+                base[2] = objects[i].width;
+                base[3] = objects[i].height;
+                base[4] = objects[i].texture_s;
+                base[5] = objects[i].texture_t;
+                base[6] = objects[i].texture_s + objects[i].texture_width;
+                base[7] = objects[i].texture_t + objects[i].texture_height;
+        }
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+static void
 init_objects(void)
 {
         object_program = load_shader_program("obj-vertex-shader.glsl",
@@ -212,13 +294,6 @@ init_objects(void)
         int vertex_data[] = {
                 0, 1, 3, /* triangle 1 */
                 1, 2, 3, /* triangle 2 */
-        };
-
-        float instance_data[] = {
-                /* pos         size           texture coords */
-                0.0f, 0.0f,    5.0f, 5.0f,    0.0f, 0.5f, 0.5f, 1.0f,
-                20.0f, 15.0f,  10.0f, 10.0f,  0.5f, 0.5f, 1.0f, 1.0f,
-                17.0f, 12.0f,  10.0f, 10.0f,  0.5f, 0.0f, 1.0f, 0.5f,
         };
 
         glGenVertexArrays(1, &object_vao);
@@ -240,12 +315,7 @@ init_objects(void)
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, object_instance_vbo);
-        glBufferData(GL_ARRAY_BUFFER,
-                     sizeof(instance_data),
-                     instance_data,
-                     GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        update_object_data();
 
         glBindBuffer(GL_ARRAY_BUFFER, object_instance_vbo);
 
