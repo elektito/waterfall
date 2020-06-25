@@ -179,10 +179,18 @@ load_texture(const char *filename)
         printf("Loaded texture: filename=%s size=%dx%d channels=%d\n",
                filename, w, h, channels);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_WRAP_S,
+                        GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_WRAP_T,
+                        GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_MIN_FILTER,
+                        GL_NEAREST_MIPMAP_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_MAG_FILTER,
+                        GL_NEAREST);
 
         /* Generate mipmaps. */
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -244,17 +252,21 @@ init_objects(void)
         GLint obj_position_attr = glGetAttribLocation(object_program,
                                                       "obj_position");
         glEnableVertexAttribArray(obj_position_attr);
-        glVertexAttribPointer(obj_position_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) 0);
+        glVertexAttribPointer(obj_position_attr, 2, GL_FLOAT, GL_FALSE,
+                              8 * sizeof(float), (void *) 0);
         glVertexAttribDivisor(obj_position_attr, 1);
 
         GLint obj_size_attr = glGetAttribLocation(object_program, "obj_size");
         glEnableVertexAttribArray(obj_size_attr);
-        glVertexAttribPointer(obj_size_attr, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (2 * sizeof(GLfloat)));
+        glVertexAttribPointer(obj_size_attr, 2, GL_FLOAT, GL_FALSE,
+                              8 * sizeof(float),
+                              (void *) (2 * sizeof(GLfloat)));
         glVertexAttribDivisor(obj_size_attr, 1);
 
         GLint obj_tex_coords_attr = glGetAttribLocation(object_program, "obj_texture_coords");
         glEnableVertexAttribArray(obj_tex_coords_attr);
-        glVertexAttribPointer(obj_tex_coords_attr, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) (4 * sizeof(GLfloat)));
+        glVertexAttribPointer(obj_tex_coords_attr, 4, GL_FLOAT, GL_FALSE,
+                              8 * sizeof(float), (void *) (4 * sizeof(GLfloat)));
         glVertexAttribDivisor(obj_tex_coords_attr, 1);
 
         /* glVertexAttribPointer already registered with the VAO, so
@@ -297,11 +309,11 @@ init_map(void)
                         /* bottom-left texture coordinates */
                         base = instance_data + 4*((MAP_WIDTH * y) + x);
                         base[0] = 0.0f;
-                        base[1] = 0.0;
+                        base[1] = 0.5;
 
                         /* top-right texture-coordinates */
                         base[2] = 0.5f;
-                        base[3] = 0.5f;
+                        base[3] = 1.0f;
                 }
         }
 
@@ -336,7 +348,8 @@ init_map(void)
         GLint tex_coords_attr = glGetAttribLocation(map_program,
                                                     "tile_texture_coords");
         glEnableVertexAttribArray(tex_coords_attr);
-        glVertexAttribPointer(tex_coords_attr, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
+        glVertexAttribPointer(tex_coords_attr, 4, GL_FLOAT, GL_FALSE,
+                              4 * sizeof(float), (void *) 0);
 
         /* Mark it as an instance attribute updated for each
            instance */
@@ -498,7 +511,7 @@ main(int argc, char *argv[])
                 return 1;
         }
 
-        /* Create an OpenGL context and make it current.o */
+        /* Create an OpenGL context and make it current. */
         SDL_GL_CreateContext(window);
 
         if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
