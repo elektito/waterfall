@@ -35,6 +35,11 @@ struct object {
         float texture_t;
         float texture_width;
         float texture_height;
+
+        enum {
+                PLAYER,
+                OTHER,
+        } type;
 };
 
 static struct object objects[] = {
@@ -47,6 +52,7 @@ static struct object objects[] = {
                 .texture_t = 0.5f,
                 .texture_width = 0.5f,
                 .texture_height = 0.5f,
+                .type = OTHER,
         },
         {
                 .x = 20.0f,
@@ -57,6 +63,7 @@ static struct object objects[] = {
                 .texture_t = 0.5f,
                 .texture_width = 0.5f,
                 .texture_height = 0.5f,
+                .type = PLAYER,
         },
         {
                 .x = 17.0f,
@@ -67,8 +74,11 @@ static struct object objects[] = {
                 .texture_t = 0.0f,
                 .texture_width = 0.5f,
                 .texture_height = 0.5,
+                .type = OTHER,
         }
 };
+
+struct object *player = &objects[1];
 
 static char *
 read_file(const char *filename, long *length)
@@ -271,8 +281,41 @@ load_texture(const char *filename)
 }
 
 static void
+sort_objects(void)
+{
+        int i, j;
+        struct object key;
+
+        /* Use insertion sort to sort the objects. This is an
+           efficient algorithm when the array is already mostly
+           sorted, which is the case here. */
+        for (i = 0; i < obj_count; ++i) {
+                key = objects[i];
+
+                j = i - 1;
+                while (j >= 0 && objects[j].y < key.y) {
+                        objects[j + 1] = objects[j];
+                        --j;
+                }
+
+                objects[j + 1] = key;
+        }
+
+        /* Find the player object in the list and store a pointer to
+           it. */
+        for (i = 0; i < obj_count; ++i) {
+                if (objects[i].type == PLAYER) {
+                        player = &objects[i];
+                        break;
+                }
+        }
+}
+
+static void
 update_object_data(void)
 {
+        sort_objects();
+
         glBindBuffer(GL_ARRAY_BUFFER, object_instance_vbo);
 
         /* Re-allocate buffer data. In case data size has changed this
@@ -527,27 +570,27 @@ handle_events(SDL_Event *e, SDL_Window *window, int *quit)
                         break;
 
                 case SDLK_LEFT:
-                        objects[1].x -= cam_w / 100.0;
+                        player->x -= cam_w / 100.0;
                         update_object_data();
-                        center_camera(objects[1].x, objects[1].y);
+                        center_camera(player->x, player->y);
                         break;
 
                 case SDLK_RIGHT:
-                        objects[1].x += cam_w / 100.0;
+                        player->x += cam_w / 100.0;
                         update_object_data();
-                        center_camera(objects[1].x, objects[1].y);
+                        center_camera(player->x, player->y);
                         break;
 
                 case SDLK_UP:
-                        objects[1].y += cam_h / 100.0;
+                        player->y += cam_h / 100.0;
                         update_object_data();
-                        center_camera(objects[1].x, objects[1].y);
+                        center_camera(player->x, player->y);
                         break;
 
                 case SDLK_DOWN:
-                        objects[1].y -= cam_h / 100.0;
+                        player->y -= cam_h / 100.0;
                         update_object_data();
-                        center_camera(objects[1].x, objects[1].y);
+                        center_camera(player->x, player->y);
                         break;
 
                 case SDLK_MINUS:
