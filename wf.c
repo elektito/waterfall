@@ -29,6 +29,7 @@ static int obj_count = 3;
 struct object {
         float x;
         float y;
+        float base_y;
         float width;
         float height;
         float texture_s;
@@ -46,6 +47,7 @@ static struct object objects[] = {
         {
                 .x = 0.0f,
                 .y = 0.0f,
+                .base_y = 0.0f,
                 .width = 5.0f,
                 .height = 5.0f,
                 .texture_s = 0.0f,
@@ -57,6 +59,7 @@ static struct object objects[] = {
         {
                 .x = 20.0f,
                 .y = 15.0f,
+                .base_y = 0.0f,
                 .width = 10.0f,
                 .height = 10.0f,
                 .texture_s = 0.5f,
@@ -68,6 +71,7 @@ static struct object objects[] = {
         {
                 .x = 17.0f,
                 .y = 12.0f,
+                .base_y = 0.1875f,
                 .width = 10.0f,
                 .height = 10.0f,
                 .texture_s = 0.5f,
@@ -280,6 +284,12 @@ load_texture(const char *filename)
         return tex;
 }
 
+static float
+obj_base_y(const struct object *obj)
+{
+        return obj->y + obj->base_y * obj->height;
+}
+
 static void
 sort_objects(void)
 {
@@ -293,7 +303,9 @@ sort_objects(void)
                 key = objects[i];
 
                 j = i - 1;
-                while (j >= 0 && objects[j].y < key.y) {
+                while (j >= 0 &&
+                       obj_base_y(&objects[j]) < obj_base_y(&key))
+                {
                         objects[j + 1] = objects[j];
                         --j;
                 }
@@ -662,6 +674,7 @@ main(int argc, char *argv[])
         }
 
         load();
+        sort_objects();
 
         SDL_ShowWindow(window);
 
